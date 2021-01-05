@@ -260,12 +260,9 @@ class DiCompileCommand extends Command
      */
     private function getExcludedLibraryPaths(array $libraryPaths)
     {
-        $libraryPaths = array_map(
-            function ($libraryPath) {
-                return preg_quote($libraryPath, '#');
-            },
-            $libraryPaths
-        );
+        $libraryPaths = array_map(function ($libraryPath) {
+            return preg_quote($libraryPath, '#');
+        }, $libraryPaths);
 
         $excludedLibraryPaths = [
             '#^(?:' . join('|', $libraryPaths) . ')/([\\w]+/)?Test#',
@@ -398,8 +395,7 @@ class DiCompileCommand extends Command
                 $compiledPathsList['application'],
                 $compiledPathsList['library'],
                 $compiledPathsList['generated_helpers'],
-            ],
-            OperationFactory::APPLICATION_ACTION_LIST_GENERATOR => [],
+            ]
         ];
 
         return $operations;

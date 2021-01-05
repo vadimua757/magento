@@ -12,7 +12,6 @@ use Magento\Catalog\Model\ResourceModel\Category\CollectionFactory;
 use Magento\Framework\TestFramework\Unit\Helper\ObjectManager;
 use Magento\Setup\Fixtures\CategoriesFixture;
 use Magento\Setup\Fixtures\FixtureModel;
-use Magento\Store\Model\Store;
 
 class CategoriesFixtureTest extends \PHPUnit\Framework\TestCase
 {
@@ -41,10 +40,7 @@ class CategoriesFixtureTest extends \PHPUnit\Framework\TestCase
      */
     private $categoryFactoryMock;
 
-    /**
-     * @inhertidoc
-     */
-    protected function setUp()
+    public function setUp()
     {
         $this->fixtureModelMock = $this->createMock(FixtureModel::class);
         $this->collectionFactoryMock = $this->createPartialMock(CollectionFactory::class, ['create']);
@@ -149,10 +145,6 @@ class CategoriesFixtureTest extends \PHPUnit\Framework\TestCase
             ->willReturnSelf();
         $categoryMock->expects($this->once())
             ->method('setIsActive')
-            ->willReturnSelf();
-        $categoryMock->expects($this->exactly(2))
-            ->method('setStoreId')
-            ->with(Store::DEFAULT_STORE_ID)
             ->willReturnSelf();
 
         $this->categoryFactoryMock->expects($this->once())->method('create')->willReturn($categoryMock);

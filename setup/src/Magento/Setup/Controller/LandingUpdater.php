@@ -10,8 +10,6 @@ use Zend\View\Model\ViewModel;
 
 /**
  * Controller for Updater Landing page
- *
- * @deprecated Starting from Magento 2.3.6 Web Setup Wizard is deprecated
  */
 class LandingUpdater extends AbstractActionController
 {
@@ -37,7 +35,7 @@ class LandingUpdater extends AbstractActionController
     {
         $welcomeMsg = "Welcome to Magento Module Manager.<br>"
             . "Click 'Agree and Update Magento' or read ";
-        $docRef = "https://devdocs.magento.com/guides/v2.3/install-gde/install/web/install-web.html";
+        $docRef = "https://devdocs.magento.com/guides/v1.0/install-gde/install/install-web.html";
         $agreeButtonText = "Agree and Update Magento";
         $view = new ViewModel();
         $view->setTerminal(true);

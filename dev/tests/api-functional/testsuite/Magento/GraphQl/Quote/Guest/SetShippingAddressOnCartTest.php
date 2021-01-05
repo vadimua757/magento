@@ -49,12 +49,12 @@ mutation {
             company: "test company"
             street: ["test street 1", "test street 2"]
             city: "test city"
-            region: "AL"
+            region: "test region"
             postcode: "887766"
             country_code: "US"
             telephone: "88776655"
+            save_in_address_book: false
           }
-          customer_notes: "Test note"
         }
       ]
     }
@@ -73,7 +73,6 @@ mutation {
           label
         }
         __typename
-        customer_notes
       }
     }
   }
@@ -113,10 +112,11 @@ mutation {
             company: "test company"
             street: ["test street 1", "test street 2"]
             city: "test city"
-            region: "AL"
+            region: "test region"
             postcode: "887766"
             country_code: "US"
             telephone: "88776655"
+            save_in_address_book: false
           }
         }
       ]
@@ -212,6 +212,40 @@ QUERY;
      * @magentoApiDataFixture Magento/GraphQl/Catalog/_files/simple_product.php
      * @magentoApiDataFixture Magento/GraphQl/Quote/_files/guest/create_empty_cart.php
      * @magentoApiDataFixture Magento/GraphQl/Quote/_files/add_simple_product.php
+     *
+     * @dataProvider dataProviderUpdateWithMissedRequiredParameters
+     * @param string $input
+     * @param string $message
+     * @throws \Exception
+     */
+    public function testSetNewShippingAddressWithMissedRequiredParameters(string $input, string $message)
+    {
+        $maskedQuoteId = $this->getMaskedQuoteIdByReservedOrderId->execute('test_quote');
+        $input = str_replace('cart_id_value', $maskedQuoteId, $input);
+
+        $query = <<<QUERY
+mutation {
+  setShippingAddressesOnCart(
+    input: {
+      {$input}
+    }
+  ) {
+    cart {
+        shipping_addresses {
+            city
+          }
+    }
+  }
+}
+QUERY;
+        $this->expectExceptionMessage($message);
+        $this->graphQlMutation($query);
+    }
+
+    /**
+     * @magentoApiDataFixture Magento/GraphQl/Catalog/_files/simple_product.php
+     * @magentoApiDataFixture Magento/GraphQl/Quote/_files/guest/create_empty_cart.php
+     * @magentoApiDataFixture Magento/GraphQl/Quote/_files/add_simple_product.php
      */
     public function testSetNewShippingAddressOnCartWithRedundantStreetLine()
     {
@@ -230,10 +264,11 @@ mutation {
             company: "test company"
             street: ["test street 1", "test street 2", "test street 3"]
             city: "test city"
-            region: "AL"
+            region: "test region"
             postcode: "887766"
             country_code: "US"
             telephone: "88776655"
+            save_in_address_book: false
           }
         }
       ]
@@ -249,6 +284,28 @@ mutation {
 QUERY;
         self::expectExceptionMessage('"Street Address" cannot contain more than 2 lines.');
         $this->graphQlMutation($query);
+    }
+
+    /**
+     * @return array
+     */
+    public function dataProviderUpdateWithMissedRequiredParameters(): array
+    {
+        return [
+            'missed_shipping_addresses' => [
+                'cart_id: "cart_id_value"',
+                'Field SetShippingAddressesOnCartInput.shipping_addresses of required type [ShippingAddressInput]! ' .
+                'was not provided.',
+            ],
+            'missed_city' => [
+                'shipping_addresses: [ { address: { save_in_address_book: false } } ]',
+                'Field CartAddressInput.city of required type String! was not provided'
+            ],
+            'missed_cart_id' => [
+                'shipping_addresses: {}',
+                'Required parameter "cart_id" is missing'
+            ]
+        ];
     }
 
     /**
@@ -276,10 +333,11 @@ mutation {
             company: "test company"
             street: ["test street 1", "test street 2"]
             city: "test city"
-            region: "AL"
+            region: "test region"
             postcode: "887766"
             country_code: "US"
             telephone: "88776655"
+            save_in_address_book: false
           }
         },
         {
@@ -289,10 +347,11 @@ mutation {
             company: "test company 2"
             street: ["test street 1", "test street 2"]
             city: "test city"
-            region: "AL"
+            region: "test region"
             postcode: "887766"
             country_code: "US"
             telephone: "88776655"
+            save_in_address_book: false
           }
         }
       ]
@@ -328,10 +387,11 @@ mutation {
           company: "test company"
           street: ["test street 1", "test street 2"]
           city: "test city"
-          region: "AL"
+          region: "test region"
           postcode: "887766"
           country_code: "US"
           telephone: "88776655"
+          save_in_address_book: false
         }
       }
     }
@@ -467,8 +527,7 @@ QUERY;
             ['response_field' => 'postcode', 'expected_value' => '887766'],
             ['response_field' => 'telephone', 'expected_value' => '88776655'],
             ['response_field' => 'country', 'expected_value' => ['code' => 'US', 'label' => 'US']],
-            ['response_field' => '__typename', 'expected_value' => 'ShippingCartAddress'],
-            ['response_field' => 'customer_notes', 'expected_value' => 'Test note']
+            ['response_field' => '__typename', 'expected_value' => 'ShippingCartAddress']
         ];
 
         $this->assertResponseFields($shippingAddressResponse, $assertionMap);

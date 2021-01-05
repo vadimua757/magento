@@ -7,12 +7,10 @@ declare(strict_types=1);
 
 namespace Magento\Sales\Model\Service;
 
-use Magento\Framework\Stdlib\DateTime\TimezoneInterface;
 use Magento\Quote\Api\CartRepositoryInterface;
 use Magento\Quote\Model\Quote;
 use Magento\Sales\Api\PaymentFailuresInterface;
 use Magento\TestFramework\Helper\Bootstrap;
-use PHPUnit\Framework\MockObject\MockObject;
 
 /**
  * Tests \Magento\Sales\Api\PaymentFailuresInterface.
@@ -30,14 +28,9 @@ class PaymentFailuresServiceTest extends \PHPUnit\Framework\TestCase
     private $quote;
 
     /**
-     * @var CartRepositoryInterface|MockObject
+     * @var CartRepositoryInterface|\PHPUnit_Framework_MockObject_MockObject
      */
     private $cartRepositoryMock;
-
-    /**
-     * @var TimezoneInterface|MockObject
-     */
-    private $localeDateMock;
 
     /**
      * @inheritdoc
@@ -49,15 +42,11 @@ class PaymentFailuresServiceTest extends \PHPUnit\Framework\TestCase
             ->disableOriginalConstructor()
             ->setMethods(['get'])
             ->getMockForAbstractClass();
-        $this->localeDateMock = $this->getMockBuilder(TimezoneInterface::class)
-            ->setMethods(['formatDateTime'])
-            ->getMockForAbstractClass();
 
         $this->paymentFailures = Bootstrap::getObjectManager()->create(
             PaymentFailuresInterface::class,
             [
                 'cartRepository' => $this->cartRepositoryMock,
-                'localeDate' => $this->localeDateMock,
             ]
         );
     }
@@ -80,19 +69,20 @@ class PaymentFailuresServiceTest extends \PHPUnit\Framework\TestCase
             ->with($this->quote->getId())
             ->willReturn($this->quote);
 
-        $dateAndTime = 'Nov 22, 2019, 1:00:00 AM';
-        $this->localeDateMock->expects($this->atLeastOnce())->method('formatDateTime')->willReturn($dateAndTime);
         $this->paymentFailures->handle((int)$this->quote->getId(), $errorMessage->render());
 
         $paymentReflection = new \ReflectionClass($this->paymentFailures);
+        $templateTimeMethod = $paymentReflection->getMethod('getLocaleDate');
+        $templateTimeMethod->setAccessible(true);
+
         $templateVarsMethod = $paymentReflection->getMethod('getTemplateVars');
         $templateVarsMethod->setAccessible(true);
 
         $templateVars = $templateVarsMethod->invoke($this->paymentFailures, $this->quote, $errorMessage, $checkoutType);
         $expectedVars = [
-            'reason' => $errorMessage->render(),
+            'reason' => $errorMessage,
             'checkoutType' => $checkoutType,
-            'dateAndTime' => $dateAndTime,
+            'dateAndTime' => $templateTimeMethod->invoke($this->paymentFailures),
             'customer' => 'John Smith',
             'customerEmail' => 'aaa@aaa.com',
             'paymentMethod' => 'Some Title Of The Method',
@@ -101,8 +91,6 @@ class PaymentFailuresServiceTest extends \PHPUnit\Framework\TestCase
             'total' => 'USD 30.0000',
             'billingAddress' => $this->quote->getBillingAddress(),
             'shippingAddress' => $this->quote->getShippingAddress(),
-            'billingAddressHtml' => $this->quote->getBillingAddress()->format('html'),
-            'shippingAddressHtml' => $this->quote->getShippingAddress()->format('html'),
         ];
 
         $this->assertEquals($expectedVars, $templateVars);

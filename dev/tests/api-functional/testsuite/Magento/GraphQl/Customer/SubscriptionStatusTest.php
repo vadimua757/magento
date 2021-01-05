@@ -29,7 +29,7 @@ class SubscriptionStatusTest extends GraphQlAbstract
      */
     private $subscriberFactory;
 
-    protected function setUp(): void
+    protected function setUp()
     {
         parent::setUp();
 
@@ -162,7 +162,7 @@ QUERY;
         return ['Authorization' => 'Bearer ' . $customerToken];
     }
 
-    protected function tearDown(): void
+    protected function tearDown()
     {
         parent::tearDown();
 

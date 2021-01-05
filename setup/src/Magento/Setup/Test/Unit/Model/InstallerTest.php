@@ -292,10 +292,9 @@ namespace Magento\Setup\Test\Unit\Model {
             $setup = $this->createMock(\Magento\Setup\Module\Setup::class);
             $table = $this->createMock(\Magento\Framework\DB\Ddl\Table::class);
             $connection = $this->getMockBuilder(\Magento\Framework\DB\Adapter\AdapterInterface::class)
-                ->setMethods(['getSchemaListener', 'newTable', 'getTables'])
+                ->setMethods(['getSchemaListener', 'newTable'])
                 ->getMockForAbstractClass();
             $connection->expects($this->any())->method('getSchemaListener')->willReturn($this->schemaListenerMock);
-            $connection->expects($this->once())->method('getTables')->willReturn([]);
             $setup->expects($this->any())->method('getConnection')->willReturn($connection);
             $table->expects($this->any())->method('addColumn')->willReturn($table);
             $table->expects($this->any())->method('setComment')->willReturn($table);
@@ -308,9 +307,8 @@ namespace Magento\Setup\Test\Unit\Model {
             $dataSetup->expects($this->any())->method('getConnection')->willReturn($connection);
             $cacheManager = $this->createMock(\Magento\Framework\App\Cache\Manager::class);
             $cacheManager->expects($this->any())->method('getAvailableTypes')->willReturn(['foo', 'bar']);
-            $cacheManager->expects($this->exactly(3))->method('setEnabled')->willReturn(['foo', 'bar']);
-            $cacheManager->expects($this->exactly(3))->method('clean');
-            $cacheManager->expects($this->exactly(3))->method('getStatus')->willReturn(['foo' => 1, 'bar' => 1]);
+            $cacheManager->expects($this->once())->method('setEnabled')->willReturn(['foo', 'bar']);
+            $cacheManager->expects($this->any())->method('clean');
             $appState = $this->getMockBuilder(\Magento\Framework\App\State::class)
                 ->disableOriginalConstructor()
                 ->disableArgumentCloning()
@@ -384,7 +382,6 @@ namespace Magento\Setup\Test\Unit\Model {
 
         /**
          * @return array
-         * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
          */
         public function installDataProvider()
         {
@@ -413,20 +410,15 @@ namespace Magento\Setup\Test\Unit\Model {
                         ['Installing user configuration...'],
                         ['Enabling caches:'],
                         ['Current status:'],
-                        [print_r(['foo' => 1, 'bar' => 1], true)],
+                        [''],
                         ['Installing data...'],
                         ['Data install/update:'],
-                        ['Disabling caches:'],
-                        ['Current status:'],
-                        [print_r([], true)],
                         ['Module \'Foo_One\':'],
                         ['Module \'Bar_Two\':'],
                         ['Data post-updates:'],
                         ['Module \'Foo_One\':'],
                         ['Module \'Bar_Two\':'],
-                        ['Enabling caches:'],
-                        ['Current status:'],
-                        [print_r([], true)],
+                        //['Installing admin user...'],
                         ['Caches clearing:'],
                         ['Cache cleared successfully'],
                         ['Disabling Maintenance Mode:'],
@@ -464,20 +456,14 @@ namespace Magento\Setup\Test\Unit\Model {
                         ['Installing user configuration...'],
                         ['Enabling caches:'],
                         ['Current status:'],
-                        [print_r(['foo' => 1, 'bar' => 1], true)],
+                        [''],
                         ['Installing data...'],
                         ['Data install/update:'],
-                        ['Disabling caches:'],
-                        ['Current status:'],
-                        [print_r([], true)],
                         ['Module \'Foo_One\':'],
                         ['Module \'Bar_Two\':'],
                         ['Data post-updates:'],
                         ['Module \'Foo_One\':'],
                         ['Module \'Bar_Two\':'],
-                        ['Enabling caches:'],
-                        ['Current status:'],
-                        [print_r([], true)],
                         ['Installing admin user...'],
                         ['Caches clearing:'],
                         ['Cache cleared successfully'],

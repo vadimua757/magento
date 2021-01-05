@@ -3,50 +3,30 @@
  * See COPYING.txt for license details.
  */
 
-/**
- * Copyright © Magento, Inc. All rights reserved.
- * See COPYING.txt for license details.
- */
-
 define([
-    'squire'
-], function (Squire) {
+    'underscore',
+    'uiRegistry',
+    'Magento_Ui/js/form/form'
+], function (_, registry, Constr) {
     'use strict';
 
     describe('Magento_Ui/js/form/form', function () {
-        var injector = new Squire(),
-            mocks = {
-                'Magento_Ui/js/lib/registry/registry': {
-                    /** Method stub. */
-                    get: function () {
-                        return {
-                            get: jasmine.createSpy(),
-                            set: jasmine.createSpy()
-                        };
-                    },
-                    options: jasmine.createSpy(),
-                    create: jasmine.createSpy(),
-                    set: jasmine.createSpy(),
-                    async: jasmine.createSpy()
-                }
-            },
-            obj,
-            dataScope = 'dataScope';
 
-        beforeEach(function (done) {
-            injector.mock(mocks);
-            injector.require([
-                'Magento_Ui/js/form/form'
-            ], function (Constr) {
-                obj = new Constr({
-                    provider: 'provName',
-                    name: '',
-                    index: '',
-                    dataScope: dataScope
-                });
+        var obj = new Constr({
+            provider: 'provName',
+            name: '',
+            index: ''
+        });
 
-                done();
-            });
+        registry.set('provName', {
+            /** Stub */
+            on: function () {},
+
+            /** Stub */
+            get: function () {},
+
+            /** Stub */
+            set: function () {}
         });
 
         describe('"initAdapter" method', function () {

@@ -3,182 +3,177 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 declare(strict_types=1);
 
 namespace Magento\CatalogSearch\Model\Search;
 
-use Magento\Catalog\Api\ProductAttributeRepositoryInterface;
-use Magento\TestFramework\Catalog\Model\Layer\QuickSearchByQuery;
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\ResourceModel\Eav\Attribute;
+use Magento\Eav\Api\AttributeRepositoryInterface;
+use Magento\Elasticsearch\SearchAdapter\ConnectionManager;
+use Magento\Elasticsearch6\Model\Client\Elasticsearch as ElasticsearchClient;
+use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\Exception\StateException;
+use Magento\Framework\Search\Request\Builder;
+use Magento\Framework\Search\Request\Config as RequestConfig;
+use Magento\Framework\Search\Response\QueryResponse;
+use Magento\Framework\Search\SearchEngineInterface;
+use Magento\Indexer\Model\Indexer;
 use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\Helper\CacheCleaner;
 use Magento\TestFramework\ObjectManager;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Test founded products order after quick search with changed attribute search weight using mysql search engine.
+ * Test for name over sku search weight of product attributes
  *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  * @magentoAppIsolation enabled
+ * @magentoDbIsolation enabled
  */
 class AttributeSearchWeightTest extends TestCase
 {
-    /**
-     * @var $objectManager ObjectManager
-     */
+
+    /** @var $objectManager ObjectManager */
     private $objectManager;
 
     /**
-     * @var ProductAttributeRepositoryInterface
+     * @var ConnectionManager
      */
-    private $productAttributeRepository;
+    private $connectionManager;
 
     /**
-     * @var array
+     * @var ElasticsearchClient
      */
-    private $collectedAttributesWeight = [];
+    private $client;
 
     /**
-     * @var QuickSearchByQuery
+     * @var ProductRepositoryInterface
      */
-    private $quickSearchByQuery;
+    private $productRepository;
 
-    /**
-     * @inheritdoc
-     */
     protected function setUp()
     {
         $this->objectManager = Bootstrap::getObjectManager();
-        $this->productAttributeRepository = $this->objectManager->get(ProductAttributeRepositoryInterface::class);
-        $this->quickSearchByQuery = $this->objectManager->get(QuickSearchByQuery::class);
-        $this->collectCurrentProductAttributesWeights();
+        $this->connectionManager = $this->objectManager->create(ConnectionManager::class);
+        $this->client = $this->connectionManager->getConnection();
+        $this->productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
     }
 
     /**
-     * @inheritdoc
+     * @param string $attributeName
+     * @param int $searchWeight
+     * @throws NoSuchEntityException
+     * @throws StateException
      */
-    protected function tearDown()
+    private function setAttributeSearchWeight(string $attributeName, int $searchWeight)
     {
-        $this->updateAttributesWeight($this->collectedAttributesWeight);
+        /** @var AttributeRepositoryInterface $attributeRepository */
+        $attributeRepository = $this->objectManager->create(AttributeRepositoryInterface::class);
+
+        /** @var Attribute $attribute */
+        $attribute = $attributeRepository->get('catalog_product', $attributeName);
+
+        if ($attribute) {
+            $attribute->setSearchWeight($searchWeight);
+            $attributeRepository->save($attribute);
+        }
     }
 
     /**
-     * Perform search by word and check founded product order in different cases.
-     *
-     * @magentoConfigFixture default/catalog/search/engine mysql
-     * @magentoDataFixture Magento/CatalogSearch/_files/products_for_sku_search_weight_score.php
-     * @magentoDataFixture Magento/CatalogSearch/_files/full_reindex.php
-     * @dataProvider attributeSearchWeightDataProvider
-     * @magentoDbIsolation disabled
-     *
-     * @param string $searchQuery
-     * @param array $attributeWeights
-     * @param array $expectedProductNames
-     * @return void
+     * @throws \Throwable
      */
-    public function testAttributeSearchWeight(
-        string $searchQuery,
-        array $attributeWeights,
-        array $expectedProductNames
-    ): void {
-        $this->updateAttributesWeight($attributeWeights);
-        $actualProductNames = $this->quickSearchByQuery->execute($searchQuery)->getColumnValues('name');
-        $this->assertEquals($expectedProductNames, $actualProductNames, 'Products order is not as expected.');
+    private function reindex()
+    {
+        CacheCleaner::cleanAll();
+
+        /** @var Indexer $indexer */
+        $indexer = $this->objectManager->create(Indexer::class);
+        $indexer->load('catalogsearch_fulltext');
+        $indexer->reindexAll();
     }
 
     /**
-     * Data provider with word for quick search, attributes weight and expected products name order.
-     *
+     * @param string $query
      * @return array
+     * @throws NoSuchEntityException
      */
-    public function attributeSearchWeightDataProvider(): array
+    private function findProducts(string $query): array
+    {
+        $config = $this->objectManager->create(RequestConfig::class);
+
+        /** @var Builder $requestBuilder */
+        $requestBuilder = $this->objectManager->create(
+            Builder::class,
+            ['config' => $config]
+        );
+        $requestBuilder->bind('search_term', $query);
+        $requestBuilder->setRequestName('quick_search_container');
+
+        /** @var QueryResponse $searchResult */
+        $searchResults = $this->objectManager->create(SearchEngineInterface::class)
+            ->search($requestBuilder->create());
+
+        $products = [];
+        foreach ($searchResults as $searchResult) {
+            $products [] = $this->productRepository->getById($searchResult->getId());
+        }
+
+        return $products;
+    }
+
+    /**
+     * @dataProvider skuOverNameAttributeSearchWeightDataProvider
+     * @magentoConfigFixture default/catalog/search/engine elasticsearch6
+     * @magentoConfigFixture current_store catalog/search/elasticsearch_index_prefix composite_product_search
+     * @magentoDataFixture Magento/CatalogSearch/_files/products_for_sku_search_weight_score.php
+     * @param string $searchQuery
+     * @param int $skuSearchWeight
+     * @param int $nameSearchWeight
+     * @param string $firstMatchProductName
+     * @param string $secondMatchProductName
+     * @throws NoSuchEntityException
+     * @throws \Throwable
+     */
+    public function testSkuOverNameAttributeSearchWeight(
+        string $searchQuery,
+        int $skuSearchWeight,
+        int $nameSearchWeight,
+        string $firstMatchProductName,
+        string $secondMatchProductName
+    ) {
+        $this->setAttributeSearchWeight('sku', $skuSearchWeight);
+        $this->setAttributeSearchWeight('name', $nameSearchWeight);
+        $this->reindex();
+
+        /** @var Product $products [] */
+        $products = $this->findProducts($searchQuery);
+
+        $this->assertCount(
+            2,
+            $products,
+            'Expected to find 2 products, found ' . count($products) . '.'
+        );
+
+        $this->assertEquals(
+            $firstMatchProductName,
+            $products[0]->getData('name'),
+            'Products order is not as expected.'
+        );
+        $this->assertEquals(
+            $secondMatchProductName,
+            $products[1]->getData('name'),
+            'Products order is not as expected.'
+        );
+    }
+
+    public function skuOverNameAttributeSearchWeightDataProvider(): array
     {
         return [
-            'sku_order_more_than_name' => [
-                '1234-1234-1234-1234',
-                [
-                    'sku' => 6,
-                    'name' => 5,
-                ],
-                [
-                    'Simple',
-                    '1234-1234-1234-1234',
-                ],
-            ],
-            'name_order_more_than_sku' => [
-                '1234-1234-1234-1234',
-                [
-                    'name' => 6,
-                    'sku' => 5,
-                ],
-                [
-                    '1234-1234-1234-1234',
-                    'Simple',
-                ],
-            ],
-            'search_by_word_from_description' => [
-                'Simple',
-                [
-                    'test_searchable_attribute' => 8,
-                    'sku' => 6,
-                    'name' => 5,
-                    'description' => 1,
-                ],
-                [
-                    'Product with attribute',
-                    '1234-1234-1234-1234',
-                    'Simple',
-                    'Product with description',
-                ],
-            ],
-            'search_by_attribute_option' => [
-                'Simple',
-                [
-                    'description' => 10,
-                    'test_searchable_attribute' => 8,
-                    'sku' => 6,
-                    'name' => 1,
-                ],
-                [
-                    'Product with description',
-                    'Product with attribute',
-                    '1234-1234-1234-1234',
-                    'Simple',
-                ],
-            ],
+            ['1-2-3-4', 10, 5, 'test', '1-2-3-4'],
+            ['1-2-3-4', 5, 10, '1-2-3-4', 'test'],
         ];
-    }
-
-    /**
-     * Update attributes weight.
-     *
-     * @param array $attributeWeights
-     * @return void
-     */
-    protected function updateAttributesWeight(array $attributeWeights): void
-    {
-        foreach ($attributeWeights as $attributeCode => $weight) {
-            $attribute = $this->productAttributeRepository->get($attributeCode);
-            $attribute->setSearchWeight($weight);
-            $this->productAttributeRepository->save($attribute);
-        }
-    }
-
-    /**
-     * Collect weight of attributes which use in test.
-     *
-     * @return void
-     */
-    private function collectCurrentProductAttributesWeights(): void
-    {
-        if (empty($this->collectedAttributesWeight)) {
-            $attributeCodes = [
-                'sku',
-                'name',
-                'description',
-                'test_searchable_attribute'
-            ];
-            foreach ($attributeCodes as $attributeCode) {
-                $attribute = $this->productAttributeRepository->get($attributeCode);
-                $this->collectedAttributesWeight[$attribute->getAttributeCode()] = $attribute->getSearchWeight();
-            }
-        }
     }
 }

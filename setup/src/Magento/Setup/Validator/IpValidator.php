@@ -42,12 +42,12 @@ class IpValidator
 
         $this->filterIps($ips);
 
-        if (count($this->none) > 0 && !$noneAllowed) {
+        if (sizeof($this->none) > 0 && !$noneAllowed) {
             $messages[] = "'none' is not allowed";
-        } elseif ($noneAllowed && count($this->none) > 1) {
+        } elseif ($noneAllowed && sizeof($this->none) > 1) {
             $messages[] = "'none' can be only used once";
-        } elseif ($noneAllowed && count($this->none) > 0 &&
-            (count($this->validIps) > 0 || count($this->invalidIps) > 0)
+        } elseif ($noneAllowed && sizeof($this->none) > 0 &&
+            (sizeof($this->validIps) > 0 || sizeof($this->invalidIps) > 0)
         ) {
             $messages[] = "Multiple values are not allowed when 'none' is used";
         } else {

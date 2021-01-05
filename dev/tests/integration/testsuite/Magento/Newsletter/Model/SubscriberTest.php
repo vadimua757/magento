@@ -3,208 +3,104 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
-declare(strict_types=1);
-
 namespace Magento\Newsletter\Model;
 
-use Magento\Customer\Api\CustomerRepositoryInterface;
-use Magento\Customer\Api\Data\CustomerInterfaceFactory;
-use Magento\Customer\Api\AccountManagementInterface;
-use Magento\Framework\ObjectManagerInterface;
-use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Mail\Template\TransportBuilderMock;
-use PHPUnit\Framework\TestCase;
 
 /**
- * Class checks subscription behavior.
- *
- * @see \Magento\Newsletter\Model\Subscriber
+ * \Magento\Newsletter\Model\Subscriber tests
  */
-class SubscriberTest extends TestCase
+class SubscriberTest extends \PHPUnit\Framework\TestCase
 {
-    /** @var ObjectManagerInterface  */
-    private $objectManager;
-
-    /** @var SubscriberFactory */
-    private $subscriberFactory;
-
-    /** @var TransportBuilderMock  */
-    private $transportBuilder;
-
-    /** @var CustomerRepositoryInterface */
-    private $customerRepository;
-
     /**
-     * @inheritdoc
+     * @var Subscriber
      */
+    private $model;
+
     protected function setUp()
     {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->subscriberFactory = $this->objectManager->get(SubscriberFactory::class);
-        $this->transportBuilder = $this->objectManager->get(TransportBuilderMock::class);
-        $this->customerRepository = $this->objectManager->get(CustomerRepositoryInterface::class);
-    }
-
-    /**
-     * Tests that confirmation code does NOT change after creating Customer account with subscription.
-     *
-     * @magentoDataFixture Magento/Newsletter/_files/subscribers.php
-     * @return void
-     */
-    public function testConfirmationCodeDoesNotChangeWhenCustomerEmailHasSubscription(): void
-    {
-        /** @var Subscriber $subscriber */
-        $subscriber = $this->subscriberFactory->create()
-            ->loadByEmail('customer_confirm@example.com');
-        $confirmCode = $subscriber->getCode();
-
-        /** @var CustomerInterfaceFactory $customerFactory */
-        $customerFactory = $this->objectManager->get(CustomerInterfaceFactory::class);
-        $customerDataObject = $customerFactory->create()
-            ->setFirstname('Firstname')
-            ->setLastname('Lastname')
-            ->setEmail('customer_confirm@example.com');
-
-        /** @var AccountManagementInterface $accountManagement */
-        $accountManagement = $this->objectManager->get(AccountManagementInterface::class);
-        $createdCustomer = $this->customerRepository->save(
-            $customerDataObject,
-            $accountManagement->getPasswordHash('password')
+        $this->model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
+            \Magento\Newsletter\Model\Subscriber::class
         );
-
-        $subscriber->loadByCustomerId((int)$createdCustomer->getId());
-        $this->assertEquals($confirmCode, $subscriber->getCode());
     }
 
     /**
-     * @magentoConfigFixture current_store newsletter/subscription/confirm 1
-     *
      * @magentoDataFixture Magento/Newsletter/_files/subscribers.php
-     *
-     * @return void
+     * @magentoConfigFixture current_store newsletter/subscription/confirm 1
      */
-    public function testEmailConfirmation(): void
+    public function testEmailConfirmation()
     {
-        $subscriber = $this->subscriberFactory->create();
-        $subscriber->subscribe('customer_confirm@example.com');
+        $this->model->subscribe('customer_confirm@example.com');
+        /** @var TransportBuilderMock $transportBuilder */
+        $transportBuilder = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
+            ->get(\Magento\TestFramework\Mail\Template\TransportBuilderMock::class);
         // confirmationCode 'ysayquyajua23iq29gxwu2eax2qb6gvy' is taken from fixture
         $this->assertContains(
-            '/newsletter/subscriber/confirm/id/' . $subscriber->getSubscriberId()
+            '/newsletter/subscriber/confirm/id/' . $this->model->getSubscriberId()
             . '/code/ysayquyajua23iq29gxwu2eax2qb6gvy',
-            $this->transportBuilder->getSentMessage()->getBody()->getParts()[0]->getRawContent()
+            $transportBuilder->getSentMessage()->getBody()->getParts()[0]->getRawContent()
         );
-        $this->assertEquals(Subscriber::STATUS_NOT_ACTIVE, $subscriber->getSubscriberStatus());
+        $this->assertEquals(Subscriber::STATUS_NOT_ACTIVE, $this->model->getSubscriberStatus());
     }
 
     /**
      * @magentoDataFixture Magento/Newsletter/_files/subscribers.php
-     *
-     * @return void
      */
-    public function testLoadByCustomerId(): void
+    public function testLoadByCustomerId()
     {
-        $subscriber = $this->subscriberFactory->create();
-        $this->assertSame($subscriber, $subscriber->loadByCustomerId(1));
-        $this->assertEquals('customer@example.com', $subscriber->getSubscriberEmail());
+        $this->assertSame($this->model, $this->model->loadByCustomerId(1));
+        $this->assertEquals('customer@example.com', $this->model->getSubscriberEmail());
     }
 
     /**
      * @magentoDataFixture Magento/Newsletter/_files/subscribers.php
-     *
-     * @magentoAppArea frontend
-     *
-     * @return void
+     * @magentoAppArea     frontend
      */
-    public function testUnsubscribeSubscribe(): void
+    public function testUnsubscribeSubscribe()
     {
-        $subscriber = $this->subscriberFactory->create();
-        $this->assertSame($subscriber, $subscriber->loadByCustomerId(1));
-        $this->assertEquals($subscriber, $subscriber->unsubscribe());
-        $this->assertContains(
-            'You have been unsubscribed from the newsletter.',
-            $this->transportBuilder->getSentMessage()->getRawMessage()
-        );
-        $this->assertEquals(Subscriber::STATUS_UNSUBSCRIBED, $subscriber->getSubscriberStatus());
-        // Subscribe and verify
-        $this->assertEquals(Subscriber::STATUS_SUBSCRIBED, $subscriber->subscribe('customer@example.com'));
-        $this->assertEquals(Subscriber::STATUS_SUBSCRIBED, $subscriber->getSubscriberStatus());
-        $this->assertContains(
-            'You have been successfully subscribed to our newsletter.',
-            $this->transportBuilder->getSentMessage()->getRawMessage()
-        );
-    }
-
-    /**
-     * @magentoDataFixture Magento/Newsletter/_files/subscribers.php
-     *
-     * @magentoAppArea frontend
-     *
-     * @return void
-     */
-    public function testUnsubscribeSubscribeByCustomerId(): void
-    {
-        $subscriber = $this->subscriberFactory->create();
         // Unsubscribe and verify
-        $this->assertSame($subscriber, $subscriber->unsubscribeCustomerById(1));
-        $this->assertEquals(Subscriber::STATUS_UNSUBSCRIBED, $subscriber->getSubscriberStatus());
-        $this->assertContains(
-            'You have been unsubscribed from the newsletter.',
-            $this->transportBuilder->getSentMessage()->getRawMessage()
-        );
+        $this->assertSame($this->model, $this->model->loadByCustomerId(1));
+        $this->assertEquals($this->model, $this->model->unsubscribe());
+        $this->assertEquals(Subscriber::STATUS_UNSUBSCRIBED, $this->model->getSubscriberStatus());
+
         // Subscribe and verify
-        $this->assertSame($subscriber, $subscriber->subscribeCustomerById(1));
-        $this->assertEquals(Subscriber::STATUS_SUBSCRIBED, $subscriber->getSubscriberStatus());
-        $this->assertContains(
-            'You have been successfully subscribed to our newsletter.',
-            $this->transportBuilder->getSentMessage()->getRawMessage()
-        );
+        $this->assertEquals(Subscriber::STATUS_SUBSCRIBED, $this->model->subscribe('customer@example.com'));
+        $this->assertEquals(Subscriber::STATUS_SUBSCRIBED, $this->model->getSubscriberStatus());
     }
 
     /**
-     * @magentoConfigFixture current_store newsletter/subscription/confirm 1
-     *
      * @magentoDataFixture Magento/Newsletter/_files/subscribers.php
-     *
-     * @return void
+     * @magentoAppArea     frontend
      */
-    public function testConfirm(): void
+    public function testUnsubscribeSubscribeByCustomerId()
     {
-        $subscriber = $this->subscriberFactory->create();
+        // Unsubscribe and verify
+        $this->assertSame($this->model, $this->model->unsubscribeCustomerById(1));
+        $this->assertEquals(Subscriber::STATUS_UNSUBSCRIBED, $this->model->getSubscriberStatus());
+
+        // Subscribe and verify
+        $this->assertSame($this->model, $this->model->subscribeCustomerById(1));
+        $this->assertEquals(Subscriber::STATUS_SUBSCRIBED, $this->model->getSubscriberStatus());
+    }
+
+    /**
+     * @magentoDataFixture Magento/Newsletter/_files/subscribers.php
+     * @magentoConfigFixture current_store newsletter/subscription/confirm 1
+     */
+    public function testConfirm()
+    {
         $customerEmail = 'customer_confirm@example.com';
-        $subscriber->subscribe($customerEmail);
-        $subscriber->loadByEmail($customerEmail);
-        $subscriber->confirm($subscriber->getSubscriberConfirmCode());
+        $this->model->subscribe($customerEmail);
+        $this->model->loadByEmail($customerEmail);
+        $this->model->confirm($this->model->getSubscriberConfirmCode());
+
+        $transportBuilder = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
+            \Magento\TestFramework\Mail\Template\TransportBuilderMock::class
+        );
+
         $this->assertContains(
             'You have been successfully subscribed to our newsletter.',
-            $this->transportBuilder->getSentMessage()->getRawMessage()
+            $transportBuilder->getSentMessage()->getRawMessage()
         );
-    }
-
-    /**
-     * @magentoDataFixture Magento/Customer/_files/customer_confirmation_config_enable.php
-     * @magentoDataFixture Magento/Newsletter/_files/newsletter_unconfirmed_customer.php
-     *
-     * @return void
-     */
-    public function testSubscribeUnconfirmedCustomerWithSubscription(): void
-    {
-        $customer = $this->customerRepository->get('unconfirmedcustomer@example.com');
-        $subscriber = $this->subscriberFactory->create();
-        $subscriber->subscribeCustomerById($customer->getId());
-        $this->assertEquals(Subscriber::STATUS_SUBSCRIBED, $subscriber->getStatus());
-    }
-
-    /**
-     * @magentoDataFixture Magento/Customer/_files/customer_confirmation_config_enable.php
-     * @magentoDataFixture Magento/Customer/_files/unconfirmed_customer.php
-     *
-     * @return void
-     */
-    public function testSubscribeUnconfirmedCustomerWithoutSubscription(): void
-    {
-        $customer = $this->customerRepository->get('unconfirmedcustomer@example.com');
-        $subscriber = $this->subscriberFactory->create();
-        $subscriber->subscribeCustomerById($customer->getId());
-        $this->assertEquals(Subscriber::STATUS_UNCONFIRMED, $subscriber->getStatus());
     }
 }

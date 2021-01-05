@@ -117,14 +117,14 @@ class PlaceOrderWithPayflowLinkTest extends TestCase
       cart_id: "$cartId"
       payment_method: {
           code: "$paymentMethod"
-            payflow_link:
+            payflow_link: 
             {
            cancel_url:"paypal/payflow/cancel"
            return_url:"paypal/payflow/return"
            error_url:"paypal/payflow/error"
           }
       }
-  }) {
+  }) {    
        cart {
           selected_payment_method {
           code
@@ -133,14 +133,14 @@ class PlaceOrderWithPayflowLinkTest extends TestCase
   }
     placeOrder(input: {cart_id: "$cartId"}) {
       order {
-        order_number
+        order_id
       }
     }
 }
 QUERY;
 
         $productMetadata = ObjectManager::getInstance()->get(ProductMetadataInterface::class);
-        $button = 'Magento_2_' . $productMetadata->getEdition();
+        $button = 'Magento_Cart_' . $productMetadata->getEdition();
 
         $payflowLinkResponse = new DataObject(
             [
@@ -183,11 +183,11 @@ QUERY;
             $responseData['data']['setPaymentMethodOnCart']['cart']['selected_payment_method']['code']
         );
         $this->assertTrue(
-            isset($responseData['data']['placeOrder']['order']['order_number'])
+            isset($responseData['data']['placeOrder']['order']['order_id'])
         );
         $this->assertEquals(
             'test_quote',
-            $responseData['data']['placeOrder']['order']['order_number']
+            $responseData['data']['placeOrder']['order']['order_id']
         );
     }
 
@@ -219,14 +219,14 @@ QUERY;
       cart_id: "$cartId"
       payment_method: {
           code: "$paymentMethod"
-            payflow_link:
+            payflow_link: 
             {
            cancel_url:"paypal/payflow/cancelPayment"
            return_url:"paypal/payflow/returnUrl"
            error_url:"paypal/payflow/returnUrl"
           }
       }
-  }) {
+  }) {    
        cart {
           selected_payment_method {
           code
@@ -235,7 +235,7 @@ QUERY;
   }
     placeOrder(input: {cart_id: "$cartId"}) {
       order {
-        order_number
+        order_id
       }
     }
 }
@@ -273,6 +273,6 @@ QUERY;
             $expectedExceptionMessage,
             $actualError['message']
         );
-        $this->assertEquals(GraphQlInputException::EXCEPTION_CATEGORY, $actualError['extensions']['category']);
+        $this->assertEquals(GraphQlInputException::EXCEPTION_CATEGORY, $actualError['category']);
     }
 }

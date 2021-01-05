@@ -48,7 +48,7 @@ class ChangeCustomerPasswordTest extends GraphQlAbstract
      */
     private $customerRepository;
 
-    protected function setUp(): void
+    protected function setUp()
     {
         $this->customerTokenService = Bootstrap::getObjectManager()->get(CustomerTokenServiceInterface::class);
         $this->accountManagement = Bootstrap::getObjectManager()->get(AccountManagementInterface::class);

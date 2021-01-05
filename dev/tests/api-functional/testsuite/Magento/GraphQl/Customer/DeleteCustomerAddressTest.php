@@ -39,7 +39,7 @@ class DeleteCustomerAddressTest extends GraphQlAbstract
      */
     private $lockCustomer;
 
-    protected function setUp(): void
+    protected function setUp()
     {
         parent::setUp();
 

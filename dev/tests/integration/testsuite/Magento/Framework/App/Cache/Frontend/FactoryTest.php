@@ -63,7 +63,6 @@ class FactoryTest extends \PHPUnit\Framework\TestCase
         //Removing data
         sleep(2);
         $this->assertTrue($this->model->remove($secondIdentifier));
-        $this->assertTrue($this->model->remove($identifier));
         $this->assertEquals($this->model->load($identifier), false);
         $this->assertEquals($this->model->load($secondIdentifier), false);
 
@@ -74,5 +73,11 @@ class FactoryTest extends \PHPUnit\Framework\TestCase
         //Checking data
         $this->assertEquals($this->model->load($identifier), $data);
         $this->assertEquals($this->model->load($secondIdentifier), $secondData);
+
+        //Removing data
+        sleep(2);
+        $this->assertTrue($this->model->remove($identifier));
+        $this->assertEquals($this->model->load($identifier), false);
+        $this->assertEquals($this->model->load($secondIdentifier), false);
     }
 }

@@ -24,6 +24,7 @@ $orders = [
         'base_grand_total' => 120.00,
         'store_id' => 1,
         'website_id' => 1,
+        'payment' => $payment
     ],
     [
         'increment_id' => '100000003',
@@ -35,6 +36,7 @@ $orders = [
         'total_paid' => 130.00,
         'store_id' => 0,
         'website_id' => 0,
+        'payment' => $payment
     ],
     [
         'increment_id' => '100000004',
@@ -45,6 +47,7 @@ $orders = [
         'subtotal' => 140.00,
         'store_id' => 1,
         'website_id' => 1,
+        'payment' => $payment
     ],
     [
         'increment_id' => '100000005',
@@ -56,6 +59,7 @@ $orders = [
         'total_paid' => 150.00,
         'store_id' => 1,
         'website_id' => 1,
+        'payment' => $payment
     ],
     [
         'increment_id' => '100000006',
@@ -67,6 +71,7 @@ $orders = [
         'total_paid' => 160.00,
         'store_id' => 1,
         'website_id' => 1,
+        'payment' => $payment
     ],
 ];
 
@@ -74,8 +79,6 @@ $orders = [
 $orderRepository = $objectManager->create(OrderRepositoryInterface::class);
 /** @var array $orderData */
 foreach ($orders as $orderData) {
-    $newPayment = clone $payment;
-    $newPayment->setId(null);
     /** @var $order \Magento\Sales\Model\Order */
     $order = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
         \Magento\Sales\Model\Order::class
@@ -105,8 +108,7 @@ foreach ($orders as $orderData) {
         ->setCustomerId(1)
         ->setCustomerEmail('customer@example.com')
         ->setBillingAddress($billingAddress)
-        ->setShippingAddress($shippingAddress)
-        ->setPayment($newPayment);
+        ->setShippingAddress($shippingAddress);
 
     $orderRepository->save($order);
 }

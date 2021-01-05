@@ -75,45 +75,20 @@ class DeleteFilesTest extends \PHPUnit\Framework\TestCase
      * Execute method with correct directory path and file name to check that files under WYSIWYG media directory
      * can be removed.
      *
-     * @param string $filename
      * @return void
-     * @dataProvider executeDataProvider
      */
-    public function testExecute(string $filename)
+    public function testExecute()
     {
-        $filePath =  $this->fullDirectoryPath . DIRECTORY_SEPARATOR . $filename;
-        $fixtureDir = realpath(__DIR__ . '/../../../../../Catalog/_files');
-        copy($fixtureDir . '/' . $this->fileName, $filePath);
-
         $this->model->getRequest()->setMethod('POST')
-            ->setPostValue('files', [$this->imagesHelper->idEncode($filename)]);
+            ->setPostValue('files', [$this->imagesHelper->idEncode($this->fileName)]);
         $this->model->getStorage()->getSession()->setCurrentPath($this->fullDirectoryPath);
         $this->model->execute();
 
         $this->assertFalse(
             $this->mediaDirectory->isExist(
-                $this->mediaDirectory->getRelativePath($this->fullDirectoryPath . '/' . $filename)
+                $this->mediaDirectory->getRelativePath($this->fullDirectoryPath . '/' . $this->fileName)
             )
         );
-    }
-
-    /**
-     * DataProvider for testExecute
-     *
-     * @return array
-     */
-    public function executeDataProvider(): array
-    {
-        return [
-            ['name with spaces.jpg'],
-            ['name with, comma.jpg'],
-            ['name with* asterisk.jpg'],
-            ['name with[ bracket.jpg'],
-            ['magento_small_image.jpg'],
-            ['_.jpg'],
-            [' - .jpg'],
-            ['-.jpg'],
-        ];
     }
 
     /**

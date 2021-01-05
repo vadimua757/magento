@@ -5,12 +5,10 @@
  */
 namespace Magento\TestFramework;
 
-use \Laminas\Stdlib\ParametersInterface;
+use \Zend\Stdlib\ParametersInterface;
 
 /**
  * HTTP request implementation that is used instead core one for testing
- *
- * @SuppressWarnings(PHPMD.CookieAndSessionMisuse)
  */
 class Request extends \Magento\Framework\App\Request\Http
 {
@@ -23,7 +21,6 @@ class Request extends \Magento\Framework\App\Request\Http
 
     /**
      * Retrieve HTTP HOST.
-     *
      * This method is a stub - all parameters are ignored, just static value returned.
      *
      * @param bool $trimPort

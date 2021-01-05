@@ -418,8 +418,9 @@
 }
 
 .fotorama__arr--disabled {
+    *display: none;
     cursor: default;
-    opacity: 0;
+    opacity: 0.1;
     pointer-events: none;
 }
 
@@ -696,8 +697,8 @@
     }
     .fotorama_horizontal_ratio {
         .fotorama__img {
-            .translate(-50%, -50%);
-            top: 50%;
+            .translateX(-50%);
+            height: 100%;
             left: 50%;
             position: absolute;
             width: auto;
@@ -761,7 +762,6 @@
     img {
         left: 0;
         max-width: inherit;
-        max-height: inherit;
         position: absolute;
         top: 0;
         object-fit: scale-down;

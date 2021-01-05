@@ -3,44 +3,26 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
-
-declare(strict_types=1);
-
 namespace Magento\Catalog\Model;
-
-use Magento\Catalog\Api\CategoryRepositoryInterface;
-use Magento\Catalog\Model\Category as Category;
-use Magento\Catalog\Model\ResourceModel\Category as CategoryResource;
-use Magento\Catalog\Model\ResourceModel\Category\Collection;
-use Magento\Catalog\Model\ResourceModel\Category\Tree;
-use Magento\Catalog\Model\ResourceModel\Product\Collection as ProductCollection;
-use Magento\Eav\Model\Entity\Attribute\Exception as AttributeException;
-use Magento\Framework\Url;
-use Magento\Store\Api\StoreRepositoryInterface;
-use Magento\Store\Model\Store;
-use Magento\Store\Model\StoreManagerInterface;
-use Magento\TestFramework\Helper\Bootstrap;
-use PHPUnit\Framework\TestCase;
 
 /**
  * Test class for \Magento\Catalog\Model\Category.
  * - general behaviour is tested
  *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  * @see \Magento\Catalog\Model\CategoryTreeTest
  * @magentoDataFixture Magento/Catalog/_files/categories.php
  * @magentoDbIsolation enabled
  * @magentoAppIsolation enabled
  */
-class CategoryTest extends TestCase
+class CategoryTest extends \PHPUnit\Framework\TestCase
 {
     /**
-     * @var Store
+     * @var \Magento\Store\Model\Store
      */
     protected $_store;
 
     /**
-     * @var Category
+     * @var \Magento\Catalog\Model\Category
      */
     protected $_model;
 
@@ -49,61 +31,50 @@ class CategoryTest extends TestCase
      */
     protected $objectManager;
 
-    /** @var CategoryRepository */
-    private $categoryResource;
-
-    /** @var CategoryRepositoryInterface */
-    private $categoryRepository;
-
-    /**
-     * @inheritdoc
-     */
     protected function setUp()
     {
-        $this->objectManager = Bootstrap::getObjectManager();
-        /** @var $storeManager StoreManagerInterface */
-        $storeManager = $this->objectManager->get(StoreManagerInterface::class);
+        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+        /** @var $storeManager \Magento\Store\Model\StoreManagerInterface */
+        $storeManager = $this->objectManager->get(\Magento\Store\Model\StoreManagerInterface::class);
         $this->_store = $storeManager->getStore();
-        $this->_model = $this->objectManager->create(Category::class);
-        $this->categoryResource = $this->objectManager->get(CategoryResource::class);
-        $this->categoryRepository = $this->objectManager->get(CategoryRepositoryInterface::class);
+        $this->_model = $this->objectManager->create(\Magento\Catalog\Model\Category::class);
     }
 
-    public function testGetUrlInstance(): void
+    public function testGetUrlInstance()
     {
         $instance = $this->_model->getUrlInstance();
-        $this->assertInstanceOf(Url::class, $instance);
+        $this->assertInstanceOf(\Magento\Framework\Url::class, $instance);
         $this->assertSame($instance, $this->_model->getUrlInstance());
     }
 
-    public function testGetTreeModel(): void
+    public function testGetTreeModel()
     {
         $model = $this->_model->getTreeModel();
-        $this->assertInstanceOf(Tree::class, $model);
+        $this->assertInstanceOf(\Magento\Catalog\Model\ResourceModel\Category\Tree::class, $model);
         $this->assertNotSame($model, $this->_model->getTreeModel());
     }
 
-    public function testGetTreeModelInstance(): void
+    public function testGetTreeModelInstance()
     {
         $model = $this->_model->getTreeModelInstance();
-        $this->assertInstanceOf(Tree::class, $model);
+        $this->assertInstanceOf(\Magento\Catalog\Model\ResourceModel\Category\Tree::class, $model);
         $this->assertSame($model, $this->_model->getTreeModelInstance());
     }
 
-    public function testGetDefaultAttributeSetId(): void
+    public function testGetDefaultAttributeSetId()
     {
         /* based on value installed in DB */
         $this->assertEquals(3, $this->_model->getDefaultAttributeSetId());
     }
 
-    public function testGetProductCollection(): void
+    public function testGetProductCollection()
     {
         $collection = $this->_model->getProductCollection();
-        $this->assertInstanceOf(ProductCollection::class, $collection);
+        $this->assertInstanceOf(\Magento\Catalog\Model\ResourceModel\Product\Collection::class, $collection);
         $this->assertEquals($this->_model->getStoreId(), $collection->getStoreId());
     }
 
-    public function testGetAttributes(): void
+    public function testGetAttributes()
     {
         $attributes = $this->_model->getAttributes();
         $this->assertArrayHasKey('name', $attributes);
@@ -114,7 +85,7 @@ class CategoryTest extends TestCase
         $this->assertArrayNotHasKey('custom_design', $attributes);
     }
 
-    public function testGetProductsPosition(): void
+    public function testGetProductsPosition()
     {
         $this->assertEquals([], $this->_model->getProductsPosition());
         $this->_model->unsetData();
@@ -126,21 +97,23 @@ class CategoryTest extends TestCase
         $this->assertNotEmpty($this->_model->getProductsPosition());
     }
 
-    public function testGetStoreIds(): void
+    public function testGetStoreIds()
     {
         $this->_model = $this->getCategoryByName('Category 1.1');
         /* id from fixture */
         $this->assertContains(
-            Bootstrap::getObjectManager()->get(StoreManagerInterface::class)->getStore()->getId(),
+            \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
+                \Magento\Store\Model\StoreManagerInterface::class
+            )->getStore()->getId(),
             $this->_model->getStoreIds()
         );
     }
 
-    public function testSetGetStoreId(): void
+    public function testSetGetStoreId()
     {
         $this->assertEquals(
-            Bootstrap::getObjectManager()->get(
-                StoreManagerInterface::class
+            \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
+                \Magento\Store\Model\StoreManagerInterface::class
             )->getStore()->getId(),
             $this->_model->getStoreId()
         );
@@ -153,10 +126,10 @@ class CategoryTest extends TestCase
      * @magentoAppIsolation enabled
      * @magentoConfigFixture current_store catalog/frontend/flat_catalog_product 1
      */
-    public function testSetStoreIdWithNonNumericValue(): void
+    public function testSetStoreIdWithNonNumericValue()
     {
-        /** @var $store Store */
-        $store = Bootstrap::getObjectManager()->create(Store::class);
+        /** @var $store \Magento\Store\Model\Store */
+        $store = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Store\Model\Store::class);
         $store->load('fixturestore');
 
         $this->assertNotEquals($this->_model->getStoreId(), $store->getId());
@@ -166,7 +139,7 @@ class CategoryTest extends TestCase
         $this->assertEquals($this->_model->getStoreId(), $store->getId());
     }
 
-    public function testGetUrl(): void
+    public function testGetUrl()
     {
         $this->assertStringEndsWith('catalog/category/view/', $this->_model->getUrl());
 
@@ -183,42 +156,42 @@ class CategoryTest extends TestCase
         $this->assertStringEndsWith('catalog/category/view/id/1000/', $this->_model->getUrl());
     }
 
-    public function testGetCategoryIdUrl(): void
+    public function testGetCategoryIdUrl()
     {
         $this->assertStringEndsWith('catalog/category/view/', $this->_model->getCategoryIdUrl());
         $this->_model->setUrlKey('test_key');
         $this->assertStringEndsWith('catalog/category/view/s/test_key/', $this->_model->getCategoryIdUrl());
     }
 
-    public function testFormatUrlKey(): void
+    public function testFormatUrlKey()
     {
         $this->assertEquals('test', $this->_model->formatUrlKey('test'));
         $this->assertEquals('test-some-chars-5', $this->_model->formatUrlKey('test-some#-chars^5'));
         $this->assertEquals('test', $this->_model->formatUrlKey('test-????????'));
     }
 
-    public function testGetImageUrl(): void
+    public function testGetImageUrl()
     {
         $this->assertFalse($this->_model->getImageUrl());
         $this->_model->setImage('test.gif');
         $this->assertStringEndsWith('media/catalog/category/test.gif', $this->_model->getImageUrl());
     }
 
-    public function testGetCustomDesignDate(): void
+    public function testGetCustomDesignDate()
     {
         $dates = $this->_model->getCustomDesignDate();
         $this->assertArrayHasKey('from', $dates);
         $this->assertArrayHasKey('to', $dates);
     }
 
-    public function testGetDesignAttributes(): void
+    public function testGetDesignAttributes()
     {
         $attributes = $this->_model->getDesignAttributes();
         $this->assertContains('custom_design_from', array_keys($attributes));
         $this->assertContains('custom_design_to', array_keys($attributes));
     }
 
-    public function testCheckId(): void
+    public function testCheckId()
     {
         $this->_model = $this->getCategoryByName('Category 1.1.1');
         $categoryId = $this->_model->getId();
@@ -226,13 +199,13 @@ class CategoryTest extends TestCase
         $this->assertFalse($this->_model->checkId(111));
     }
 
-    public function testVerifyIds(): void
+    public function testVerifyIds()
     {
         $ids = $this->_model->verifyIds($this->_model->getParentIds());
         $this->assertNotContains(100, $ids);
     }
 
-    public function testHasChildren(): void
+    public function testHasChildren()
     {
         $this->_model->load(3);
         $this->assertTrue($this->_model->hasChildren());
@@ -240,21 +213,21 @@ class CategoryTest extends TestCase
         $this->assertFalse($this->_model->hasChildren());
     }
 
-    public function testGetRequestPath(): void
+    public function testGetRequestPath()
     {
         $this->assertNull($this->_model->getRequestPath());
         $this->_model->setData('request_path', 'test');
         $this->assertEquals('test', $this->_model->getRequestPath());
     }
 
-    public function testGetName(): void
+    public function testGetName()
     {
         $this->assertNull($this->_model->getName());
         $this->_model->setData('name', 'test');
         $this->assertEquals('test', $this->_model->getName());
     }
 
-    public function testGetProductCount(): void
+    public function testGetProductCount()
     {
         $this->_model->load(6);
         $this->assertEquals(0, $this->_model->getProductCount());
@@ -263,14 +236,14 @@ class CategoryTest extends TestCase
         $this->assertEquals(1, $this->_model->getProductCount());
     }
 
-    public function testGetAvailableSortBy(): void
+    public function testGetAvailableSortBy()
     {
         $this->assertEquals([], $this->_model->getAvailableSortBy());
         $this->_model->setData('available_sort_by', 'test,and,test');
         $this->assertEquals(['test', 'and', 'test'], $this->_model->getAvailableSortBy());
     }
 
-    public function testGetAvailableSortByOptions(): void
+    public function testGetAvailableSortByOptions()
     {
         $options = $this->_model->getAvailableSortByOptions();
         $this->assertContains('price', array_keys($options));
@@ -278,27 +251,25 @@ class CategoryTest extends TestCase
         $this->assertContains('name', array_keys($options));
     }
 
-    public function testGetDefaultSortBy(): void
+    public function testGetDefaultSortBy()
     {
         $this->assertEquals('position', $this->_model->getDefaultSortBy());
     }
 
-    public function testValidate(): void
+    public function testValidate()
     {
-        $this->_model->addData(
-            [
-                "include_in_menu" => false,
-                "is_active" => false,
-                'name' => 'test',
-            ]
-        );
+        $this->_model->addData([
+            "include_in_menu" => false,
+            "is_active" => false,
+            'name' => 'test',
+        ]);
         $this->assertNotEmpty($this->_model->validate());
     }
 
     /**
      * @magentoDataFixture Magento/Catalog/_files/category_with_position.php
      */
-    public function testSaveCategoryWithPosition(): void
+    public function testSaveCategoryWithPosition()
     {
         $category = $this->_model->load('444');
         $this->assertEquals('5', $category->getPosition());
@@ -307,10 +278,10 @@ class CategoryTest extends TestCase
     /**
      * @magentoDbIsolation enabled
      */
-    public function testSaveCategoryWithoutImage(): void
+    public function testSaveCategoryWithoutImage()
     {
-        $model = $this->objectManager->create(Category::class);
-        $repository = $this->objectManager->get(CategoryRepositoryInterface::class);
+        $model = $this->objectManager->create(\Magento\Catalog\Model\Category::class);
+        $repository = $this->objectManager->get(\Magento\Catalog\Api\CategoryRepositoryInterface::class);
 
         $model->setName('Test Category 100')
             ->setParentId(2)
@@ -328,7 +299,7 @@ class CategoryTest extends TestCase
     /**
      * @magentoAppArea adminhtml
      */
-    public function testDeleteChildren(): void
+    public function testDeleteChildren()
     {
         $this->_model->unsetData();
         $this->_model->load(4);
@@ -350,100 +321,28 @@ class CategoryTest extends TestCase
     }
 
     /**
-     * @magentoDataFixture Magento/Catalog/_files/category.php
-     */
-    public function testAddChildCategory(): void
-    {
-        $data = [
-            'name' => 'Child Category',
-            'path' => '1/2/333',
-            'is_active' => '1',
-            'include_in_menu' => '1',
-        ];
-        $this->_model->setData($data);
-        $this->categoryResource->save($this->_model);
-        $parentCategory = $this->categoryRepository->get(333);
-        $this->assertContains($this->_model->getId(), $parentCategory->getChildren());
-    }
-
-    /**
-     * @return void
-     */
-    public function testMissingRequiredAttribute(): void
-    {
-        $data = [
-            'path' => '1/2',
-            'is_active' => '1',
-            'include_in_menu' => '1',
-        ];
-        $this->expectException(AttributeException::class);
-        $this->expectExceptionMessage(
-            (string)__('The "Name" attribute value is empty. Set the attribute and try again.')
-        );
-        $this->_model->setData($data);
-        $this->_model->validate();
-    }
-
-    /**
-     * @dataProvider categoryFieldsProvider
-     * @param array $data
-     */
-    public function testCategoryCreateWithDifferentFields(array $data): void
-    {
-        $requiredData = [
-            'name' => 'Test Category',
-            'attribute_set_id' => '3',
-            'parent_id' => 2,
-        ];
-        $this->_model->setData(array_merge($requiredData, $data));
-        $this->categoryResource->save($this->_model);
-        $category = $this->categoryRepository->get($this->_model->getId());
-        $categoryData = $category->toArray(array_keys($data));
-        $this->assertSame($data, $categoryData);
-    }
-
-    /**
-     * @return array
-     */
-    public function categoryFieldsProvider(): array
-    {
-        return [
-            [
-                'enable_fields' => [
-                    'is_active' => '1',
-                    'include_in_menu' => '1',
-                ],
-                'disable_fields' => [
-                    'is_active' => '0',
-                    'include_in_menu' => '0',
-                ],
-            ],
-        ];
-    }
-
-    /**
      * @magentoDataFixture Magento/Store/_files/second_store.php
      * @magentoDataFixture Magento/Catalog/_files/categories.php
      * @magentoDbIsolation disabled
      * @return void
      */
-    public function testCreateSubcategoryWithMultipleStores(): void
+    public function testCreateSubcategoryWithMultipleStores()
     {
         $parentCategoryId = 3;
-        $storeManager = $this->objectManager->get(StoreManagerInterface::class);
-        $storeManager->setCurrentStore(Store::ADMIN_CODE);
-        /** @var StoreRepositoryInterface $storeRepository */
-        $storeRepository = $this->objectManager->get(StoreRepositoryInterface::class);
+        $storeManager = $this->objectManager->get(\Magento\Store\Model\StoreManagerInterface::class);
+        $storeManager->setCurrentStore(\Magento\Store\Model\Store::ADMIN_CODE);
+        /** @var \Magento\Store\Api\StoreRepositoryInterface $storeRepository */
+        $storeRepository = $this->objectManager->get(\Magento\Store\Api\StoreRepositoryInterface::class);
         $storeId = $storeRepository->get('fixture_second_store')->getId();
-        /** @var CategoryRepositoryInterface $repository */
-        $repository = $this->objectManager->get(CategoryRepositoryInterface::class);
+        /** @var \Magento\Catalog\Api\CategoryRepositoryInterface $repository */
+        $repository = $this->objectManager->get(\Magento\Catalog\Api\CategoryRepositoryInterface::class);
         $parentCategory = $repository->get($parentCategoryId, $storeId);
         $parentAllStoresPath = $parentCategory->getUrlPath();
         $parentSecondStoreKey = 'parent-category-url-key-second-store';
         $parentCategory->setUrlKey($parentSecondStoreKey);
         $repository->save($parentCategory);
-        /** @var Category $childCategory */
-        $childCategory = $this->objectManager->create(Category::class);
+        /** @var \Magento\Catalog\Model\Category $childCategory */
+        $childCategory = $this->objectManager->create(\Magento\Catalog\Model\Category::class);
         $childCategory->setName('Test Category 100')
             ->setParentId($parentCategoryId)
             ->setLevel(2)
@@ -461,41 +360,10 @@ class CategoryTest extends TestCase
 
     protected function getCategoryByName($categoryName)
     {
-        /* @var Collection $collection */
-        $collection = $this->objectManager->create(Collection::class);
+        /* @var \Magento\Catalog\Model\ResourceModel\Category\Collection $collection */
+
+        $collection = $this->objectManager->create(\Magento\Catalog\Model\ResourceModel\Category\Collection::class);
         $collection->addNameToResult()->load();
-
         return $collection->getItemByColumnValue('name', $categoryName);
-    }
-
-    /**
-     * @return void
-     */
-    public function testSaveCategoryWithWrongPath(): void
-    {
-        /** @var CategoryRepositoryInterface $categoryRepository */
-        $categoryRepository = $this->objectManager->get(CategoryRepositoryInterface::class);
-        $categoryFactory = $this->objectManager->get(\Magento\Catalog\Api\Data\CategoryInterfaceFactory::class);
-
-        /** @var \Magento\Catalog\Api\Data\CategoryInterface $category */
-        $category = $categoryFactory->create(
-            [
-                'data' => [
-                    'name' => 'Category With Wrong Path',
-                    'parent_id' => 2,
-                    'path' => 'wrong/path',
-                    'level' => 2,
-                    'available_sort_by' =>['position', 'name'],
-                    'default_sort_by' => 'name',
-                    'is_active' => true,
-                    'position' => 1,
-                ],
-            ]
-        );
-        $category->isObjectNew(true);
-        $category->save();
-
-        $createdCategory = $categoryRepository->get($category->getId());
-        $this->assertEquals('0/0/'. $createdCategory->getId(), $createdCategory->getPath());
     }
 }

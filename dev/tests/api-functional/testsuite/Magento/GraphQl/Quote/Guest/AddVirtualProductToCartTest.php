@@ -45,10 +45,33 @@ class AddVirtualProductToCartTest extends GraphQlAbstract
         $response = $this->graphQlMutation($query);
 
         self::assertArrayHasKey('cart', $response['addVirtualProductsToCart']);
-        self::assertArrayHasKey('id', $response['addVirtualProductsToCart']['cart']);
-        self::assertEquals($maskedQuoteId, $response['addVirtualProductsToCart']['cart']['id']);
         self::assertEquals($quantity, $response['addVirtualProductsToCart']['cart']['items'][0]['quantity']);
         self::assertEquals($sku, $response['addVirtualProductsToCart']['cart']['items'][0]['product']['sku']);
+    }
+
+    /**
+     * @expectedException Exception
+     * @expectedExceptionMessage Required parameter "cart_id" is missing
+     */
+    public function testAddVirtualProductToCartIfCartIdIsMissed()
+    {
+        $query = <<<QUERY
+mutation {
+  addSimpleProductsToCart(
+    input: {
+      cart_items: []
+    }
+  ) {
+    cart {
+      items {
+        id
+      }
+    }
+  }
+}
+QUERY;
+
+        $this->graphQlMutation($query);
     }
 
     /**
@@ -63,6 +86,31 @@ mutation {
     input: {
       cart_id: "",
       cart_items: []
+    }
+  ) {
+    cart {
+      items {
+        id
+      }
+    }
+  }
+}
+QUERY;
+
+        $this->graphQlMutation($query);
+    }
+
+    /**
+     * @expectedException Exception
+     * @expectedExceptionMessage Required parameter "cart_items" is missing
+     */
+    public function testAddVirtualProductToCartIfCartItemsAreMissed()
+    {
+        $query = <<<QUERY
+mutation {
+  addSimpleProductsToCart(
+    input: {
+      cart_id: "cart_id"
     }
   ) {
     cart {
@@ -179,7 +227,6 @@ mutation {
     }
   ) {
     cart {
-      id
       items {
         quantity
         product {

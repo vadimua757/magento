@@ -3,28 +3,27 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
-
-use Magento\Analytics\Model\AnalyticsToken;
 use Magento\Analytics\Model\Config\Backend\Enabled\SubscriptionHandler;
-use Magento\Framework\App\Config\Storage\WriterInterface;
-use Magento\Framework\FlagManager;
 
 $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
 
 /**
- * @var $configWriter WriterInterface
+ * @var $configWriter \Magento\Framework\App\Config\Storage\WriterInterface
  */
-$configWriter = $objectManager->get(WriterInterface::class);
-$configWriter->save(SubscriptionHandler::CRON_STRING_PATH, join(' ', SubscriptionHandler::CRON_EXPR_ARRAY));
+$configWriter = $objectManager->get(\Magento\Framework\App\Config\Storage\WriterInterface::class);
+
+$configWriter->delete(SubscriptionHandler::CRON_STRING_PATH);
+$configWriter->save('analytics/subscription/enabled', 0);
 
 /**
- * @var $analyticsToken AnalyticsToken
+ * @var $analyticsToken \Magento\Analytics\Model\AnalyticsToken
  */
-$analyticsToken = $objectManager->get(AnalyticsToken::class);
+$analyticsToken = $objectManager->get(\Magento\Analytics\Model\AnalyticsToken::class);
 $analyticsToken->storeToken(null);
 
 /**
- * @var $flagManager FlagManager
+ * @var $flagManager \Magento\Framework\FlagManager
  */
-$flagManager = $objectManager->get(FlagManager::class);
-$flagManager->saveFlag(SubscriptionHandler::ATTEMPTS_REVERSE_COUNTER_FLAG_CODE, 24);
+$flagManager = $objectManager->get(\Magento\Framework\FlagManager::class);
+
+$flagManager->deleteFlag(SubscriptionHandler::ATTEMPTS_REVERSE_COUNTER_FLAG_CODE);

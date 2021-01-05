@@ -32,7 +32,7 @@ class Query extends DataSource
     {
         $this->params = $params;
         $explodedData = explode('::', $data);
-        switch (count($explodedData)) {
+        switch (sizeof($explodedData)) {
             case 1:
                 $this->data = $explodedData[0];
                 break;

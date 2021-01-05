@@ -11,11 +11,6 @@ use Magento\Framework\Config\ConfigOptionsListConstants;
 use Magento\Framework\Module\DependencyChecker;
 use Magento\Framework\Module\ModuleList\Loader as ModuleLoader;
 
-/**
- * Setup module status
- *
- * @deprecated Starting from Magento 2.3.6 Web Setup Wizard is deprecated
- */
 class ModuleStatus
 {
     /**
@@ -109,7 +104,7 @@ class ModuleStatus
                 [$module['name']],
                 $enabledModules
             );
-            if (count($errorMessages[$module['name']]) === 0) {
+            if (sizeof($errorMessages[$module['name']]) === 0) {
                 $canBeDisabled[] = $module['name'];
             }
         }
@@ -133,8 +128,6 @@ class ModuleStatus
     }
 
     /**
-     * Set module status is enabled
-     *
      * @param bool $status
      * @param String $moduleName
      *

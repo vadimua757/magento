@@ -40,6 +40,9 @@ return [
                                     "globalScope" => false,
                                     "code" => "status",
                                     "sortOrder" => "__placeholder__",
+                                    "service" => [
+                                        "template" => "ui/form/element/helper/service"
+                                    ],
                                     "componentType" => "field"
                                 ],
                             ],
@@ -63,6 +66,9 @@ return [
                                     "globalScope" => false,
                                     "code" => "name",
                                     "sortOrder" => "__placeholder__",
+                                    "service" => [
+                                        "template" => "ui/form/element/helper/service"
+                                    ],
                                     "componentType" => "field",
                                     "validation" => [
                                         "required-entry" => true

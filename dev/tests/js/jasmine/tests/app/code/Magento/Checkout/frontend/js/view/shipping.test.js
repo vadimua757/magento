@@ -12,22 +12,13 @@ require.config({
     }
 });
 
-define(['squire', 'ko', 'jquery', 'jquery/validate'], function (Squire, ko, $) {
+define(['squire', 'ko', 'jquery', 'uiRegistry', 'jquery/validate'], function (Squire, ko, $, registry) {
     'use strict';
 
     var injector = new Squire(),
         modalStub = {
             openModal: jasmine.createSpy(),
             closeModal: jasmine.createSpy()
-        },
-        country = {
-            indexedOptions: {
-                'AD': {
-                    label: 'Andorra',
-                    labeltitle: 'Andorra',
-                    value: 'AD'
-                }
-            }
         },
         mocks = {
             'Magento_Customer/js/model/customer': {
@@ -71,18 +62,7 @@ define(['squire', 'ko', 'jquery', 'jquery/validate'], function (Squire, ko, $) {
                 'checkoutData',
                 ['setSelectedShippingAddress', 'setNewCustomerShippingAddress', 'setSelectedShippingRate']
             ),
-            'Magento_Ui/js/lib/registry/registry': {
-                async: jasmine.createSpy().and.returnValue(function () {}),
-                create: jasmine.createSpy(),
-                set: jasmine.createSpy(),
-                get: jasmine.createSpy().and.callFake(function (query) {
-                    if (query === 'test.shippingAddress.shipping-address-fieldset.country_id') {
-                        return country;
-                    } else if (query === 'checkout.errors') {
-                        return {};
-                    }
-                })
-            },
+            'Magento_Ui/js/lib/registry/registry': registry,
             'Magento_Checkout/js/model/shipping-rate-service': jasmine.createSpy()
         },
         obj;
@@ -93,8 +73,8 @@ define(['squire', 'ko', 'jquery', 'jquery/validate'], function (Squire, ko, $) {
             obj = new Constr({
                 provider: 'provName',
                 name: '',
-                index: '',
                 parentName: 'test',
+                index: '',
                 popUpForm: {
                     options: {
                         buttons: {
@@ -194,6 +174,19 @@ define(['squire', 'ko', 'jquery', 'jquery/validate'], function (Squire, ko, $) {
 
         describe('"validateShippingInformation" method', function () {
             it('Check method call on negative cases.', function () {
+                var country = {
+                    'indexedOptions': {
+                        'AD':
+                            {
+                                label: 'Andorra',
+                                labeltitle: 'Andorra',
+                                value: 'AD'
+                            }
+                    }
+                };
+
+                registry.set('test.shippingAddress.shipping-address-fieldset.country_id', country);
+                registry.set('checkout.errors', {});
                 obj.source = {
                     get: jasmine.createSpy().and.returnValue(true),
                     set: jasmine.createSpy(),

@@ -108,7 +108,7 @@ class PlaceOrderWithPaymentsAdvancedTest extends TestCase
         $cartId = $this->getMaskedQuoteIdByReservedOrderId->execute('test_quote');
 
         $productMetadata = ObjectManager::getInstance()->get(ProductMetadataInterface::class);
-        $button = 'Magento_2_' . $productMetadata->getEdition();
+        $button = 'Magento_Cart_' . $productMetadata->getEdition();
 
         $payflowLinkResponse = new DataObject(
             [
@@ -149,8 +149,8 @@ class PlaceOrderWithPaymentsAdvancedTest extends TestCase
             $paymentMethod,
             $responseData['data']['setPaymentMethodOnCart']['cart']['selected_payment_method']['code']
         );
-        $this->assertNotEmpty(isset($responseData['data']['placeOrder']['order']['order_number']));
-        $this->assertEquals('test_quote', $responseData['data']['placeOrder']['order']['order_number']);
+        $this->assertNotEmpty(isset($responseData['data']['placeOrder']['order']['order_id']));
+        $this->assertEquals('test_quote', $responseData['data']['placeOrder']['order']['order_id']);
     }
 
     /**
@@ -178,7 +178,7 @@ class PlaceOrderWithPaymentsAdvancedTest extends TestCase
         $this->assertArrayHasKey('errors', $responseData);
         $actualError = $responseData['errors'][0];
         $this->assertEquals($expectedExceptionMessage, $actualError['message']);
-        $this->assertEquals(GraphQlInputException::EXCEPTION_CATEGORY, $actualError['extensions']['category']);
+        $this->assertEquals(GraphQlInputException::EXCEPTION_CATEGORY, $actualError['category']);
     }
 
     /**
@@ -230,7 +230,7 @@ class PlaceOrderWithPaymentsAdvancedTest extends TestCase
         $this->assertArrayHasKey('errors', $responseData);
         $actualError = $responseData['errors'][0];
         $this->assertEquals($expectedExceptionMessage, $actualError['message']);
-        $this->assertEquals(GraphQlInputException::EXCEPTION_CATEGORY, $actualError['extensions']['category']);
+        $this->assertEquals(GraphQlInputException::EXCEPTION_CATEGORY, $actualError['category']);
     }
 
     /**
@@ -256,7 +256,7 @@ class PlaceOrderWithPaymentsAdvancedTest extends TestCase
              error_url:"paypal/payflowadvanced/customerror"
           }
       }
-  }) {
+  }) {    
        cart {
           selected_payment_method {
           code
@@ -265,7 +265,7 @@ class PlaceOrderWithPaymentsAdvancedTest extends TestCase
   }
   placeOrder(input: {cart_id: "$cartId"}) {
     order {
-      order_number
+      order_id
     }
   }
 }
@@ -300,7 +300,7 @@ QUERY;
              error_url:"paypal/payflowadvanced/error"
           }
       }
-  }) {
+  }) {    
        cart {
           selected_payment_method {
           code

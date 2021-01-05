@@ -7,66 +7,53 @@ declare(strict_types=1);
 
 namespace Magento\Bundle\Block\Catalog\Product\View\Type;
 
-use Magento\Bundle\Model\Product\Price;
-use Magento\Catalog\Api\Data\ProductInterface;
-use Magento\Catalog\Api\ProductRepositoryInterface;
-use Magento\Framework\ObjectManagerInterface;
-use Magento\Framework\Registry;
-use Magento\Framework\Serialize\SerializerInterface;
-use Magento\Framework\View\LayoutInterface;
-use Magento\TestFramework\Helper\Bootstrap;
-use PHPUnit\Framework\TestCase;
-
 /**
- * Class checks bundle product view behaviour
+ * Test for Magento\Bundle\Block\Catalog\Product\View\Type\Bundle
  *
  * @magentoDataFixture Magento/Bundle/_files/product.php
- * @magentoDbIsolation enabled
+ * @magentoDbIsolation disabled
  * @magentoAppArea frontend
- * @see \Magento\Bundle\Block\Catalog\Product\View\Type\Bundle
  */
-class BundleTest extends TestCase
+class BundleTest extends \PHPUnit\Framework\TestCase
 {
-    /** @var Bundle */
+    /**
+     * @var \Magento\Bundle\Block\Catalog\Product\View\Type\Bundle
+     */
     private $block;
 
-    /** @var ObjectManagerInterface */
+    /**
+     * @var \Magento\Catalog\Api\Data\ProductInterface
+     */
+    private $product;
+
+    /**
+     * @var \Magento\TestFramework\ObjectManager
+     */
     private $objectManager;
 
-    /** @var ProductRepositoryInterface */
+    /**
+     * @var \Magento\Catalog\Api\ProductRepositoryInterface
+     */
     private $productRepository;
-
-    /** @var LayoutInterface */
-    private $layout;
-
-    /** @var SerializerInterface */
-    private $json;
-
-    /** @var Registry */
-    private $registry;
 
     /**
      * @inheritdoc
      */
     protected function setUp()
     {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        $this->productRepository->cleanCache();
-        $this->layout = $this->objectManager->get(LayoutInterface::class);
-        $this->block = $this->layout->createBlock(Bundle::class);
-        $this->json = $this->objectManager->get(SerializerInterface::class);
-        $this->registry = $this->objectManager->get(Registry::class);
-    }
+        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
 
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown()
-    {
-        $this->registry->unregister('product');
+        $this->productRepository = $this->objectManager->create(\Magento\Catalog\Api\ProductRepositoryInterface::class);
+        $this->product = $this->productRepository->get('bundle-product', false, null, true);
+        $this->product->setPriceType(\Magento\Bundle\Model\Product\Price::PRICE_TYPE_DYNAMIC)->save();
+        $this->objectManager->get(\Magento\Framework\Registry::class)->unregister('product');
+        $this->objectManager->get(\Magento\Framework\Registry::class)->register('product', $this->product);
 
-        parent::tearDown();
+        $this->block = $this->objectManager->get(
+            \Magento\Framework\View\LayoutInterface::class
+        )->createBlock(
+            \Magento\Bundle\Block\Catalog\Product\View\Type\Bundle::class
+        );
     }
 
     /**
@@ -74,12 +61,12 @@ class BundleTest extends TestCase
      *
      * @return void
      */
-    public function testGetJsonConfig(): void
+    public function testGetJsonConfig()
     {
-        $product = $this->updateProduct('bundle-product', ['price_type' => Price::PRICE_TYPE_DYNAMIC]);
-        $this->registerProduct($product);
-        $this->updateProduct('simple', ['special_price' => 5]);
-        $config = $this->json->unserialize($this->block->getJsonConfig());
+        $option = $this->productRepository->get('simple');
+        $option->setSpecialPrice(5)
+            ->save();
+        $config = json_decode($this->block->getJsonConfig(), true);
         $options = current($config['options']);
         $selection = current($options['selections']);
         $this->assertEquals(10, $selection['prices']['oldPrice']['amount']);
@@ -88,124 +75,10 @@ class BundleTest extends TestCase
     }
 
     /**
-     * @dataProvider isSalableForStockStatusProvider
-     *
-     * @param bool $isSalable
-     * @param string $expectedValue
-     * @return void
+     * Tear Down
      */
-    public function testStockStatusView(bool $isSalable, string $expectedValue): void
+    protected function tearDown()
     {
-        $product = $this->productRepository->get('bundle-product');
-        $product->setAllItemsSalable($isSalable);
-        $this->block->setTemplate('Magento_Bundle::catalog/product/view/type/bundle.phtml');
-        $result = $this->renderBlockHtml($product);
-        $this->assertEquals($expectedValue, trim(strip_tags($result)));
-    }
-
-    /**
-     * @return array
-     */
-    public function isSalableForStockStatusProvider(): array
-    {
-        return [
-            'is_salable' => [
-                'is_salable' => true,
-                'expected_value' => 'In stock',
-            ],
-            'is_not_salable' => [
-                'is_salable' => false,
-                'expected_value' => 'Out of stock',
-            ],
-        ];
-    }
-
-    /**
-     * @dataProvider isSalableForCustomizeButtonProvider
-     *
-     * @param bool $isSalable
-     * @param string $expectedValue
-     * @return void
-     */
-    public function testCustomizeButton(bool $isSalable, string $expectedValue): void
-    {
-        $product = $this->productRepository->get('bundle-product');
-        $product->setSalable($isSalable);
-        $this->block->setTemplate('Magento_Bundle::catalog/product/view/customize.phtml');
-        $result = $this->renderBlockHtml($product);
-        $this->assertEquals($expectedValue, trim(strip_tags($result)));
-    }
-
-    /**
-     * @return array
-     */
-    public function isSalableForCustomizeButtonProvider(): array
-    {
-        return [
-            'is_salable' => [
-                'is_salable' => true,
-                'expected_value' => 'Customize and Add to Cart',
-            ],
-            'is_not_salable' => [
-                'is_salable' => false,
-                'expected_value' => '',
-            ],
-        ];
-    }
-
-    /**
-     * @magentoDataFixture Magento/Bundle/_files/empty_bundle_product.php
-     *
-     * @param bool $isSalable
-     * @param string $expectedValue
-     * @return void
-     */
-    public function testCustomizeButtonProductWithoutOptions(): void
-    {
-        $product = $this->productRepository->get('bundle-product');
-        $product->setSalable(true);
-        $this->block->setTemplate('Magento_Bundle::catalog/product/view/customize.phtml');
-        $result = $this->renderBlockHtml($product);
-        $this->assertEmpty(trim(strip_tags($result)));
-    }
-
-    /**
-     * Update product
-     *
-     * @param ProductInterface|string $productSku
-     * @param array $data
-     * @return ProductInterface
-     */
-    private function updateProduct(string $productSku, array $data): ProductInterface
-    {
-        $product = $this->productRepository->get($productSku);
-        $product->addData($data);
-
-        return $this->productRepository->save($product);
-    }
-
-    /**
-     * Register product
-     *
-     * @param ProductInterface $product
-     * @return void
-     */
-    private function registerProduct(ProductInterface $product): void
-    {
-        $this->registry->unregister('product');
-        $this->registry->register('product', $product);
-    }
-
-    /**
-     * Render block output
-     *
-     * @param ProductInterface $product
-     * @return string
-     */
-    private function renderBlockHtml(ProductInterface $product): string
-    {
-        $this->registerProduct($product);
-
-        return $this->block->toHtml();
+        $this->objectManager->get(\Magento\Framework\Registry::class)->unregister('product');
     }
 }

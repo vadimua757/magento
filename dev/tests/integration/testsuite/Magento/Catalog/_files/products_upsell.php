@@ -4,8 +4,6 @@
  * See COPYING.txt for license details.
  */
 
-require __DIR__ . '/products_upsell_rollback.php';
-
 /** @var $product \Magento\Catalog\Model\Product */
 $product = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Catalog\Model\Product::class);
 $product->setTypeId(

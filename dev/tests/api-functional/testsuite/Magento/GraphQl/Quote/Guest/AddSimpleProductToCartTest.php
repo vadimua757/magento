@@ -45,38 +45,33 @@ class AddSimpleProductToCartTest extends GraphQlAbstract
         $response = $this->graphQlMutation($query);
         self::assertArrayHasKey('cart', $response['addSimpleProductsToCart']);
 
-        self::assertArrayHasKey('shipping_addresses', $response['addSimpleProductsToCart']['cart']);
-        self::assertEmpty($response['addSimpleProductsToCart']['cart']['shipping_addresses']);
         self::assertEquals($quantity, $response['addSimpleProductsToCart']['cart']['items'][0]['quantity']);
         self::assertEquals($sku, $response['addSimpleProductsToCart']['cart']['items'][0]['product']['sku']);
-        self::assertArrayHasKey('prices', $response['addSimpleProductsToCart']['cart']['items'][0]);
-        self::assertArrayHasKey('id', $response['addSimpleProductsToCart']['cart']);
-        self::assertEquals($maskedQuoteId, $response['addSimpleProductsToCart']['cart']['id']);
+    }
 
-        self::assertArrayHasKey('price', $response['addSimpleProductsToCart']['cart']['items'][0]['prices']);
-        $price = $response['addSimpleProductsToCart']['cart']['items'][0]['prices']['price'];
-        self::assertArrayHasKey('value', $price);
-        self::assertEquals(10, $price['value']);
-        self::assertArrayHasKey('currency', $price);
-        self::assertEquals('USD', $price['currency']);
+    /**
+     * @expectedException Exception
+     * @expectedExceptionMessage Required parameter "cart_id" is missing
+     */
+    public function testAddSimpleProductToCartIfCartIdIsMissed()
+    {
+        $query = <<<QUERY
+mutation {
+  addSimpleProductsToCart(
+    input: {
+      cart_items: []
+    }
+  ) {
+    cart {
+      items {
+        id
+      }
+    }
+  }
+}
+QUERY;
 
-        self::assertArrayHasKey('row_total', $response['addSimpleProductsToCart']['cart']['items'][0]['prices']);
-        $rowTotal = $response['addSimpleProductsToCart']['cart']['items'][0]['prices']['row_total'];
-        self::assertArrayHasKey('value', $rowTotal);
-        self::assertEquals(20, $rowTotal['value']);
-        self::assertArrayHasKey('currency', $rowTotal);
-        self::assertEquals('USD', $rowTotal['currency']);
-
-        self::assertArrayHasKey(
-            'row_total_including_tax',
-            $response['addSimpleProductsToCart']['cart']['items'][0]['prices']
-        );
-        $rowTotalIncludingTax =
-            $response['addSimpleProductsToCart']['cart']['items'][0]['prices']['row_total_including_tax'];
-        self::assertArrayHasKey('value', $rowTotalIncludingTax);
-        self::assertEquals(20, $rowTotalIncludingTax['value']);
-        self::assertArrayHasKey('currency', $rowTotalIncludingTax);
-        self::assertEquals('USD', $rowTotalIncludingTax['currency']);
+        $this->graphQlMutation($query);
     }
 
     /**
@@ -91,6 +86,31 @@ mutation {
     input: {
       cart_id: "",
       cart_items: []
+    }
+  ) {
+    cart {
+      items {
+        id
+      }
+    }
+  }
+}
+QUERY;
+
+        $this->graphQlMutation($query);
+    }
+
+    /**
+     * @expectedException Exception
+     * @expectedExceptionMessage Required parameter "cart_items" is missing
+     */
+    public function testAddSimpleProductToCartIfCartItemsAreMissed()
+    {
+        $query = <<<QUERY
+mutation {
+  addSimpleProductsToCart(
+    input: {
+      cart_id: "cart_id"
     }
   ) {
     cart {
@@ -206,40 +226,11 @@ mutation {
     }
   ) {
     cart {
-    id
       items {
         quantity
         product {
           sku
         }
-        prices {
-          price {
-           value
-           currency
-          }
-          row_total {
-           value
-           currency
-          }
-          row_total_including_tax {
-           value
-           currency
-          }
-        }
-      }
-      shipping_addresses {
-        firstname
-        lastname
-        company
-        street
-        city
-        postcode
-        telephone
-        country {
-          code
-          label
-        }
-        __typename
       }
     }
   }

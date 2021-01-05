@@ -47,7 +47,6 @@
     <preference for="Magento\Framework\App\RequestSafetyInterface" type="Magento\Framework\App\Request\Http" />
     <preference for="\Magento\Framework\Setup\SchemaSetupInterface" type="\Magento\Setup\Module\Setup" />
     <preference for="\Magento\Framework\Setup\ModuleDataSetupInterface" type="\Magento\Setup\Module\DataSetup" />
-    <preference for="Magento\Framework\App\ExceptionHandlerInterface" type="Magento\Framework\App\ExceptionHandler" />
     <type name="Magento\Store\Model\Store">
         <arguments>
             <argument name="currencyInstalled" xsi:type="string">system/currency/installed</argument>
@@ -427,7 +426,6 @@
             <argument name="reader" xsi:type="object">Magento\Framework\ObjectManager\Config\Reader\Dom\Proxy</argument>
             <argument name="cacheId" xsi:type="string">plugin-list</argument>
             <argument name="scopePriorityScheme" xsi:type="array">
-                <item name="primary" xsi:type="string">primary</item>
                 <item name="first" xsi:type="string">global</item>
             </argument>
         </arguments>
@@ -1781,6 +1779,8 @@
     <type name="Magento\Framework\Cache\LockGuardedCacheLoader">
         <arguments>
             <argument name="locker" xsi:type="object">Magento\Framework\Lock\Backend\Cache</argument>
+            <argument name="lockTimeout" xsi:type="number">10000</argument>
+            <argument name="delayTimeout" xsi:type="number">20</argument>
         </arguments>
     </type>
     <preference for="Magento\Framework\HTTP\AsyncClientInterface" type="Magento\Framework\HTTP\AsyncClient\GuzzleAsyncClient" />
@@ -1794,27 +1794,4 @@
                 type="Magento\Framework\Mail\MimeMessage" />
     <preference for="Magento\Framework\Mail\MimePartInterface"
                 type="Magento\Framework\Mail\MimePart" />
-    <type name="Magento\Framework\DB\Adapter\AdapterInterface">
-        <plugin name="execute_commit_callbacks" type="Magento\Framework\Model\ExecuteCommitCallbacks" />
-    </type>
-    <preference for="Magento\Framework\GraphQl\Query\ErrorHandlerInterface" type="Magento\Framework\GraphQl\Query\ErrorHandler"/>
-    <preference for="Magento\Framework\Filter\VariableResolverInterface" type="Magento\Framework\Filter\VariableResolver\StrategyResolver"/>
-    <virtualType name="configured_block_cache" type="Magento\Framework\App\Cache">
-        <arguments>
-            <argument name="cacheIdentifier" xsi:type="string">block_html</argument>
-        </arguments>
-    </virtualType>
-    <type name="Magento\Framework\View\Element\Context">
-        <arguments>
-            <argument name="cache" xsi:type="object">configured_block_cache</argument>
-        </arguments>
-    </type>
-    <type name="Magento\Framework\DB\Adapter\SqlVersionProvider">
-        <arguments>
-            <argument name="supportedVersionPatterns" xsi:type="array">
-                <item name="MySQL-(5.6,5.7)" xsi:type="string">^5\.[67]\.</item>
-                <item name="MariaDB-(10.0-10.2)" xsi:type="string">^10\.[0-2]\.</item>
-            </argument>
-        </arguments>
-    </type>
 </config>
